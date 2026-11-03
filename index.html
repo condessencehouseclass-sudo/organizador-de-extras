@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Plantões & Extras - Portaria</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        oneui: {
+                            bgLight: '#F3F4F8',
+                            cardLight: '#FFFFFF',
+                            bgDark: '#121318',
+                            cardDark: '#1E2028',
+                            accent: '#2C63EE',
+                            accentHover: '#1B4FD0',
+                        },
+                        porter: {
+                            jefferson: {
+                                bg: '#E8F5E9',
+                                border: '#A5D6A7',
+                                text: '#2E7D32',
+                                darkBg: '#1B3821',
+                                darkBorder: '#2E7D32',
+                                darkText: '#A5D6A7',
+                                badge: '#4CAF50'
+                            },
+                            sergio: {
+                                bg: '#FFEBEE',
+                                border: '#FFCDD2',
+                                text: '#C62828',
+                                darkBg: '#3B1A1E',
+                                darkBorder: '#C62828',
+                                darkText: '#EF9A9A',
+                                badge: '#E53935'
+                            },
+                            gerson: {
+                                bg: '#E3F2FD',
+                                border: '#BBDEFB',
+                                text: '#1565C0',
+                                darkBg: '#13283D',
+                                darkBorder: '#1565C0',
+                                darkText: '#90CAF9',
+                                badge: '#1E88E5'
+                            }
+                        }
+                    },
+                    borderRadius: {
+                        'oneui': '28px',
+                        'oneui-sm': '18px',
+                    },
+                    boxShadow: {
+                        'oneui': '0 10px 30px -5px rgba(0, 0, 0, 0.05)',
+                        'oneui-hover': '0 20px 40px -10px rgba(0, 0, 0, 0.12)',
+                        'glow': '0 0 15px rgba(44, 99, 238, 0.35)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.2s linear;
+        }
+        .glass-oneui {
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+        }
+        .dark .glass-oneui {
+            background: rgba(30, 32, 40, 0.75);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes springPop {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-spring {
+            animation: springPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .print-full { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .glass-oneui { background: white !important; backdrop-filter: none !important; }
+            .shadow-oneui, .shadow-oneui-hover { box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-oneui-bgLight dark:bg-oneui-bgDark text-gray-800 dark:text-gray-100 min-h-screen font-sans pb-12 transition-colors duration-300">
+
+    <!-- Top One UI Header -->
+    <header class="sticky top-0 z-30 glass-oneui border-b border-gray-200/50 dark:border-gray-800/50 px-4 sm:px-8 py-4 mb-6">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="w-12 h-12 rounded-2xl bg-oneui-accent/10 dark:bg-oneui-accent/20 flex items-center justify-center text-oneui-accent font-bold text-xl shadow-inner">
+                    <i class="fa-solid me-0 fa-calendar-check text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Escala de Plantões & Extras</h1>
+                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">Regime 12x36 • Supabase Cloud</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between md:justify-end gap-2 w-full md:w-auto no-print">
+                <button id="themeToggleBtn" onclick="toggleDarkMode()" class="p-3 rounded-2xl bg-gray-200/70 dark:bg-gray-800/80 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center justify-center active:scale-90" title="Alternar Tema">
+                    <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+                <button onclick="window.print()" class="px-4 py-2.5 rounded-2xl bg-gray-200/70 dark:bg-gray-800/80 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-sm flex items-center gap-2 active:scale-95">
+                    <i class="fa-solid fa-print"></i>
+                    <span class="hidden sm:inline">Imprimir / Salvar PDF</span>
+                </button>
+                <button onclick="resetDataPrompt()" class="px-3 py-2.5 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-sm font-semibold flex items-center gap-1.5 active:scale-95" title="Restaurar Escala Padrão">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="hidden sm:inline">Resetar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6">
+
+        <!-- KPI / Stats Summary Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="p-5 rounded-oneui bg-oneui-cardLight dark:bg-oneui-cardDark border border-gray-100 dark:border-gray-800 shadow-oneui hover:shadow-oneui-hover relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition-all"></div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-green-600 dark:text-green-400 flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span> Jefferson (Noite)
+                    </span>
+                    <span class="text-xs px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 font-bold">EXTRAS</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statJeffersonExtras" class="text-3xl font-extrabold tracking-tight">0</span>
+                    <span class="text-sm font-medium text-gray-500">plantões extras</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1">
+                    <i class="fa-solid fa-clock"></i> <span id="statJeffersonHours">0h</span> extras acumuladas
+                </p>
+            </div>
+
+            <div class="p-5 rounded-oneui bg-oneui-cardLight dark:bg-oneui-cardDark border border-gray-100 dark:border-gray-800 shadow-oneui hover:shadow-oneui-hover relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Gérson Felipe (Dia)
+                    </span>
+                    <span class="text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-bold">EXTRAS</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statGersonExtras" class="text-3xl font-extrabold tracking-tight">0</span>
+                    <span class="text-sm font-medium text-gray-500">plantões extras</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1">
+                    <i class="fa-solid fa-clock"></i> <span id="statGersonHours">0h</span> extras acumuladas
+                </p>
+            </div>
+
+            <div class="p-5 rounded-oneui bg-oneui-cardLight dark:bg-oneui-cardDark border border-gray-100 dark:border-gray-800 shadow-oneui hover:shadow-oneui-hover relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all"></div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Sérgio (Noite)
+                    </span>
+                    <span class="text-xs px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold">REGULAR</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statSergioShifts" class="text-3xl font-extrabold tracking-tight">0</span>
+                    <span class="text-sm font-medium text-gray-500">plantões normais</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1">
+                    <i class="fa-solid fa-moon"></i> Turno Noturno Fixo
+                </p>
+            </div>
+
+            <div class="p-5 rounded-oneui bg-oneui-cardLight dark:bg-oneui-cardDark border border-gray-100 dark:border-gray-800 shadow-oneui hover:shadow-oneui-hover relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all"></div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-chart-pie"></i> Cobertura do Mês
+                    </span>
+                    <span class="text-xs px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-bold">100%</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statTotalExtras" class="text-3xl font-extrabold tracking-tight">0</span>
+                    <span class="text-sm font-medium text-gray-500">total de extras</span>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1">
+                    <i class="fa-solid fa-check-circle text-green-500"></i> Nenhum turno vago no mês
+                </p>
+            </div>
+        </section>
+
+        <!-- Controls Bar -->
+        <section class="p-4 sm:p-5 rounded-oneui bg-oneui-cardLight dark:bg-oneui-cardDark border border-gray-100 dark:border-gray-800 shadow-oneui mb-6 flex flex-col md:flex-row items-center justify-between gap-4 no-print">
+            <div class="flex items-center justify-between w-full md:w-auto gap-3">
+                <div class="text-left">
+                    <h2 id="currentMonthLabel" class="text-lg font-bold tracking-tight capitalize">Novembro 2026</h2>
+                    <p id="currentMonthYearSub" class="text-xs text-gray-400 font-medium">Escala Ativa</p>
+                </div>
+                <button onclick="openNextMonthModal()" class="px-4 py-2.5 rounded-2xl bg-oneui-accent hover:bg-oneui-accentHover text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                    <span>Gerar Próximo Mês</span>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-2xl w-full md:w-auto overflow-x-auto no-scrollbar">
+                <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm">
+                    Todos os Turnos
+                </button>
+                <button onclick="setFilter('jefferson')" id="filter-jefferson" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
+                    <i class="fa-solid fa-circle text-green-500 text-[10px] me-1"></i> Apenas Jefferson
+                </button>
+                <button onclick="setFilter('gerson')" id="filter-gerson" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
+                    <i class="fa-solid fa-circle text-blue-500 text-[10px] me-1"></i> Apenas Gérson Felipe
+                </button>
+                <button onclick="setFilter('sergio')" id="filter-sergio" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
+                    <i class="fa-solid fa-circle text-rose-500 text-[10px] me-1"></i> Apenas Sérgio
+                </button>
+                <button onclick="setFilter('extras')" id="filter-extras" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-amber-600 dark:text-amber-400 hover:text-amber-700">
+                    <i class="fa-solid fa-star text-xs me-1"></i> Somente Extras
+                </button>
+            </div>
+
+            <div class="hidden lg:flex items-center gap-3 text-xs font-medium text-gray-500">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-green-500"></span> Jefferson</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Sérgio</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Gérson Felipe</span>
+            </div>
+        </section>
+
+        <!-- Main Calendar Grid Section -->
+        <section class="rounded-oneui bg-oneui-cardLight dark:bg-oneui-cardDark border border-gray-100 dark:border-gray-800 shadow-oneui p-4 sm:p-6 mb-8">
+            <div class="grid grid-cols-7 gap-2 mb-4 text-center font-bold text-xs uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <div class="py-2 text-rose-500">Domingo</div>
+                <div class="py-2">Segunda</div>
+                <div class="py-2">Terça</div>
+                <div class="py-2">Quarta</div>
+                <div class="py-2">Quinta</div>
+                <div class="py-2">Sexta</div>
+                <div class="py-2 text-blue-500">Sábado</div>
+            </div>
+
+            <div id="calendarGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3"></div>
+        </section>
+
+        <!-- Informative Guide Footer Card -->
+        <section class="p-6 rounded-oneui bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-200/30 dark:border-blue-800/30 mb-8 no-print">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-oneui-accent text-white flex items-center justify-center text-xl shrink-0 shadow-lg shadow-blue-500/30">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base text-gray-900 dark:text-white">Como Funciona a Troca e Marcação de Horas Extras?</h3>
+                    <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1">
+                        Clique em qualquer card do dia para **editar o plantão**, **trocar quem fará o turno extra** ou **adicionar observações de cobertura**. Salvamento instantâneo!
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for Editing Day Shift -->
+    <div id="editModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div onclick="closeEditModal()" class="absolute inset-0 bg-black/40 dark:bg-black/70 backdrop-blur-md"></div>
+        <div id="editModalBox" class="relative w-full sm:max-w-md bg-white dark:bg-oneui-cardDark rounded-t-oneui sm:rounded-oneui shadow-2xl p-6 transform translate-y-full sm:translate-y-8 transition-all duration-300 border border-gray-100 dark:border-gray-800">
+            <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4 sm:hidden"></div>
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    <div>
+                        <h3 id="modalDateTitle" class="font-bold text-lg text-gray-900 dark:text-white">Editar Dia</h3>
+                        <p class="text-xs text-gray-500">Ajuste os plantões diurno e noturno</p>
+                    </div>
+                </div>
+                <button onclick="closeEditModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-500 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="editForm" onsubmit="saveShiftChanges(event)" class="space-y-4">
+                <input type="hidden" id="modalDayIndex">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+                        <i class="fa-solid fa-sun text-amber-500 me-1"></i> Turno Diurno (07:00 as 19:00)
+                    </label>
+                    <select id="selectDiurno" class="w-full px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 border-0 text-sm font-semibold focus:ring-2 focus:ring-oneui-accent text-gray-900 dark:text-white">
+                        <option value="Gérson Felipe">Gérson Felipe (Escala Normal)</option>
+                        <option value="Jefferson">Jefferson (Plantão Extra)</option>
+                        <option value="Sérgio">Sérgio (Plantão Extra)</option>
+                        <option value="Vago">-- Turno Vago --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+                        <i class="fa-solid fa-moon text-indigo-400 me-1"></i> Turno Noturno (19:00 as 07:00)
+                    </label>
+                    <select id="selectNoturno" class="w-full px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 border-0 text-sm font-semibold focus:ring-2 focus:ring-oneui-accent text-gray-900 dark:text-white">
+                        <option value="Sérgio">Sérgio (Escala Normal)</option>
+                        <option value="Jefferson">Jefferson (Escala Normal / Extra)</option>
+                        <option value="Gérson Felipe">Gérson Felipe (Plantão Extra)</option>
+                        <option value="Vago">-- Turno Vago --</option>
+                    </select>
+                </div>
+
+                <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                    <span class="text-xs font-bold text-amber-700 dark:text-amber-400 block mb-1">
+                        <i class="fa-solid fa-star me-1"></i> Marcar Quais Turnos São EXTRAS:
+                    </span>
+                    <label class="flex items-center gap-2 text-xs font-medium cursor-pointer text-gray-800 dark:text-gray-200">
+                        <input type="checkbox" id="checkDiurnoExtra" class="w-4 h-4 rounded text-oneui-accent focus:ring-0">
+                        <span>Diurno é Plantão Extra</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-xs font-medium cursor-pointer text-gray-800 dark:text-gray-200">
+                        <input type="checkbox" id="checkNoturnoExtra" class="w-4 h-4 rounded text-oneui-accent focus:ring-0">
+                        <span>Noturno é Plantão Extra</span>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+                        Observação / Motivo da Troca
+                    </label>
+                    <input type="text" id="inputNotes" placeholder="Ex: Cobertura de folga, Troca amigável..." class="w-full px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 border-0 text-sm font-medium focus:ring-2 focus:ring-oneui-accent text-gray-900 dark:text-white">
+                </div>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="w-1/2 py-3 rounded-2xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-sm active:scale-95">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="w-1/2 py-3 rounded-2xl bg-oneui-accent hover:bg-oneui-accentHover text-white font-semibold text-sm shadow-lg shadow-blue-500/30 active:scale-95">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Generating Next Month -->
+    <div id="nextMonthModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div onclick="closeNextMonthModal()" class="absolute inset-0 bg-black/40 dark:bg-black/70 backdrop-blur-md"></div>
+        <div id="nextMonthModalBox" class="relative w-full sm:max-w-md bg-white dark:bg-oneui-cardDark rounded-t-oneui sm:rounded-oneui shadow-2xl p-6 transform translate-y-full sm:translate-y-8 transition-all duration-300 border border-gray-100 dark:border-gray-800">
+            <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4 sm:hidden"></div>
+
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-oneui-accent/10 text-oneui-accent flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg text-gray-900 dark:text-white">Gerar Novo Mês</h3>
+                        <p class="text-xs text-gray-500">Crie o próximo mês com a sequência automática</p>
+                    </div>
+                </div>
+                <button onclick="closeNextMonthModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-500 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Escolha o Mês de Destino</label>
+                    <select id="selectTargetMonth" class="w-full px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 border-0 text-sm font-semibold focus:ring-2 focus:ring-oneui-accent text-gray-900 dark:text-white">
+                        <option value="12|2026">Dezembro 2026 (31 dias)</option>
+                        <option value="1|2027">Janeiro 2027 (31 dias)</option>
+                        <option value="2|2027">Fevereiro 2027 (28 dias)</option>
+                        <option value="3|2027">Março 2027 (31 dias)</option>
+                        <option value="4|2027">Abril 2027 (30 dias)</option>
+                        <option value="5|2027">Maio 2027 (31 dias)</option>
+                        <option value="6|2027">Junho 2027 (30 dias)</option>
+                    </select>
+                </div>
+                <p class="text-xs text-gray-500 leading-relaxed bg-blue-500/10 p-3 rounded-xl border border-blue-500/20">
+                    <i class="fa-solid fa-info-circle text-oneui-accent me-1"></i> O sistema irá gerar os dias e as folgas 12x36 automaticamente para o mês selecionado, salvando direto na nuvem.
+                </p>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" onclick="closeNextMonthModal()" class="w-1/2 py-3 rounded-2xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-sm active:scale-95">Cancelar</button>
+                    <button type="button" onclick="confirmGenerateMonth()" class="w-1/2 py-3 rounded-2xl bg-oneui-accent hover:bg-oneui-accentHover text-white font-semibold text-sm shadow-lg shadow-blue-500/30 active:scale-95">Gerar Mês</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="glass-oneui px-5 py-3 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 flex items-center gap-3">
+            <div id="toastIcon" class="w-8 h-8 rounded-xl bg-green-500/20 text-green-500 flex items-center justify-center text-sm font-bold">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <span id="toastMessage" class="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-100">
+                Escala atualizada com sucesso!
+            </span>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic with Supabase & Optimistic UI -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+        const SUPABASE_URL = 'https://ehgzjfwleqqytwloarkd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZ3pqZndsZXFxeXR3bG9hcmtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0MTY2MjcsImV4cCI6MjEwODk5MjYyN30.dY64SX6f0udLSr_3P79V45oA0r5d4fcumVzwi8xO67U';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const defaultSchedule = [
+            { day: 1, dateStr: '01/nov', weekDay: 0, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 2, dateStr: '02/nov', weekDay: 1, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: 'Turno Vago Diurno', month_year: '11-2026' },
+            { day: 3, dateStr: '03/nov', weekDay: 2, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 4, dateStr: '04/nov', weekDay: 3, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 5, dateStr: '05/nov', weekDay: 4, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 6, dateStr: '06/nov', weekDay: 5, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 7, dateStr: '07/nov', weekDay: 6, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 8, dateStr: '08/nov', weekDay: 0, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 9, dateStr: '09/nov', weekDay: 1, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 10, dateStr: '10/nov', weekDay: 2, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 11, dateStr: '11/nov', weekDay: 3, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 12, dateStr: '12/nov', weekDay: 4, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 13, dateStr: '13/nov', weekDay: 5, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 14, dateStr: '14/nov', weekDay: 6, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 15, dateStr: '15/nov', weekDay: 0, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 16, dateStr: '16/nov', weekDay: 1, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 17, dateStr: '17/nov', weekDay: 2, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 18, dateStr: '18/nov', weekDay: 3, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 19, dateStr: '19/nov', weekDay: 4, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 20, dateStr: '20/nov', weekDay: 5, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 21, dateStr: '21/nov', weekDay: 6, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 22, dateStr: '22/nov', weekDay: 0, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 23, dateStr: '23/nov', weekDay: 1, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 24, dateStr: '24/nov', weekDay: 2, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 25, dateStr: '25/nov', weekDay: 3, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 26, dateStr: '26/nov', weekDay: 4, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 27, dateStr: '27/nov', weekDay: 5, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 28, dateStr: '28/nov', weekDay: 6, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 29, dateStr: '29/nov', weekDay: 0, diurno: 'Gérson Felipe', noturno: 'Sérgio', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' },
+            { day: 30, dateStr: '30/nov', weekDay: 1, diurno: '', noturno: 'Jefferson', diurnoExtra: false, noturnoExtra: false, notes: '', month_year: '11-2026' }
+        ];
+
+        defaultSchedule.forEach(item => {
+            if (item.diurno === 'Jefferson') item.diurnoExtra = true;
+            if (item.noturno === 'Gérson Felipe') item.noturnoExtra = true;
+        });
+
+        let currentSchedule = [];
+        let currentMonthName = 'Novembro 2026';
+        let activeMonthYear = '11-2026';
+        let currentFilter = 'all';
+        const STORAGE_KEY = 'oneui_portaria_schedule_v3';
+        const MONTH_META_KEY = 'oneui_portaria_month_v3';
+
+        async function loadSavedSchedule() {
+            try {
+                const { data, error } = await supabase
+                    .from('shifts')
+                    .select('*')
+                    .eq('month_year', activeMonthYear)
+                    .order('day', { ascending: true });
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    currentSchedule = data;
+                } else {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    const savedMonth = localStorage.getItem(MONTH_META_KEY);
+                    
+                    let dataToInsert = defaultSchedule;
+                    if (saved) {
+                        try {
+                            const parsed = JSON.parse(saved);
+                            dataToInsert = parsed.map(item => ({ ...item, month_year: activeMonthYear }));
+                            if (savedMonth) currentMonthName = savedMonth;
+                        } catch(e) {}
+                    }
+
+                    const { data: inserted, error: insertErr } = await supabase
+                        .from('shifts')
+                        .insert(dataToInsert)
+                        .select();
+
+                    if (!insertErr && inserted) {
+                        currentSchedule = inserted;
+                    } else {
+                        currentSchedule = defaultSchedule;
+                    }
+                }
+
+                document.getElementById('currentMonthLabel').innerText = currentMonthName;
+                renderCalendar();
+                updateStatistics();
+            } catch (err) {
+                console.error('Erro ao carregar do Supabase:', err);
+                const saved = localStorage.getItem(STORAGE_KEY);
+                currentSchedule = saved ? JSON.parse(saved) : defaultSchedule;
+                renderCalendar();
+                updateStatistics();
+            }
+        }
+
+        window.onload = function() {
+            loadSavedSchedule();
+        };
+
+        function renderCalendar() {
+            const container = document.getElementById('calendarGrid');
+            container.innerHTML = '';
+
+            const weekDaysNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            currentSchedule.forEach((item, index) => {
+                if (!matchesFilter(item)) return;
+
+                const dayCard = document.createElement('div');
+                dayCard.className = 'p-3 rounded-2xl bg-gray-50/80 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-700/50 hover:border-oneui-accent/50 hover:shadow-oneui transition-all duration-200 cursor-pointer flex flex-col justify-between group animate-spring';
+                dayCard.onclick = () => openEditModal(index);
+
+                const isWeekend = item.weekDay === 0 || item.weekDay === 6;
+                const dateHeader = `
+                    <div class="flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 pb-2 mb-2">
+                        <span class="text-xs font-bold ${isWeekend ? 'text-oneui-accent' : 'text-gray-400 dark:text-gray-500'}">
+                            ${weekDaysNames[item.weekDay]}
+                        </span>
+                        <span class="text-sm font-extrabold text-gray-900 dark:text-white">
+                            ${item.dateStr}
+                        </span>
+                    </div>
+                `;
+
+                const diurnoSlot = renderShiftPill('Diurno', item.diurno, item.diurnoExtra, 'sun');
+                const noturnoSlot = renderShiftPill('Noturno', item.noturno, item.noturnoExtra, 'moon');
+
+                const notesBadge = item.notes ? `
+                    <div class="mt-2 pt-1 border-t border-dashed border-gray-200 dark:border-gray-700 text-[10px] text-gray-500 truncate flex items-center gap-1">
+                        <i class="fa-solid fa-comment-dots text-amber-500"></i> ${item.notes}
+                    </div>
+                ` : '';
+
+                dayCard.innerHTML = `
+                    <div>
+                        ${dateHeader}
+                        <div class="space-y-1.5">
+                            ${diurnoSlot}
+                            ${noturnoSlot}
+                        </div>
+                    </div>
+                    ${notesBadge}
+                `;
+                container.appendChild(dayCard);
+            });
+        }
+
+        function renderShiftPill(shiftType, porterName, isExtra, iconType) {
+            if (!porterName || porterName === 'Vago') {
+                return `
+                    <div class="p-2 rounded-xl bg-gray-200/50 dark:bg-gray-800/80 border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-between text-xs text-gray-400">
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-${iconType} text-[10px]"></i> ${shiftType}:</span>
+                        <span class="font-semibold italic">Vago / Folga</span>
+                    </div>
+                `;
+            }
+
+            let bgClass = '';
+            let textClass = '';
+            let borderClass = '';
+            let isJefferson = porterName.toLowerCase().includes('jefferson');
+            let isSergio = porterName.toLowerCase().includes('sérgio') || porterName.toLowerCase().includes('sergio');
+            let isGerson = porterName.toLowerCase().includes('gérson') || porterName.toLowerCase().includes('gerson');
+
+            if (isJefferson) {
+                bgClass = 'bg-green-100/80 dark:bg-porter-jefferson-darkBg';
+                textClass = 'text-porter-jefferson-text dark:text-porter-jefferson-darkText';
+                borderClass = 'border-porter-jefferson-border dark:border-porter-jefferson-darkBorder';
+            } else if (isSergio) {
+                bgClass = 'bg-rose-100/80 dark:bg-porter-sergio-darkBg';
+                textClass = 'text-porter-sergio-text dark:text-porter-sergio-darkText';
+                borderClass = 'border-porter-sergio-border dark:border-porter-sergio-darkBorder';
+            } else if (isGerson) {
+                bgClass = 'bg-blue-100/80 dark:bg-porter-gerson-darkBg';
+                textClass = 'text-porter-gerson-text dark:text-porter-gerson-darkText';
+                borderClass = 'border-porter-gerson-border dark:border-porter-gerson-darkBorder';
+            }
+
+            const extraBadge = isExtra ? `
+                <span class="ml-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shadow-sm flex items-center gap-0.5">
+                    <i class="fa-solid fa-star text-[8px]"></i> EXTRA
+                </span>
+            ` : '';
+
+            return `
+                <div class="p-2 rounded-xl ${bgClass} border ${borderClass} flex items-center justify-between text-xs font-semibold ${textClass} shadow-sm">
+                    <span class="flex items-center gap-1.5 truncate">
+                        <i class="fa-solid fa-${iconType} text-[10px] opacity-75"></i>
+                        <span class="truncate">${porterName}</span>
+                    </span>
+                    ${extraBadge}
+                </div>
+            `;
+        }
+
+        function matchesFilter(item) {
+            if (currentFilter === 'all') return true;
+            if (currentFilter === 'jefferson') {
+                return (item.diurno && item.diurno.includes('Jefferson')) || (item.noturno && item.noturno.includes('Jefferson'));
+            }
+            if (currentFilter === 'sergio') {
+                return (item.diurno && item.diurno.includes('Sérgio')) || (item.noturno && item.noturno.includes('Sérgio'));
+            }
+            if (currentFilter === 'gerson') {
+                return (item.diurno && item.diurno.includes('Gérson')) || (item.noturno && item.noturno.includes('Gérson'));
+            }
+            if (currentFilter === 'extras') {
+                return item.diurnoExtra || item.noturnoExtra;
+            }
+            return true;
+        }
+
+        window.setFilter = function(filterType) {
+            currentFilter = filterType;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = 'filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white';
+            });
+
+            const activeBtn = document.getElementById(`filter-${filterType}`);
+            if (activeBtn) {
+                activeBtn.className = 'filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm';
+            }
+
+            renderCalendar();
+        };
+
+        function updateStatistics() {
+            let jeffersonExtras = 0;
+            let gersonExtras = 0;
+            let sergioShifts = 0;
+
+            currentSchedule.forEach(item => {
+                if (item.diurno === 'Jefferson' && item.diurnoExtra) jeffersonExtras++;
+                if (item.noturno === 'Jefferson' && item.noturnoExtra) jeffersonExtras++;
+
+                if (item.diurno === 'Gérson Felipe' && item.diurnoExtra) gersonExtras++;
+                if (item.noturno === 'Gérson Felipe' && item.noturnoExtra) gersonExtras++;
+
+                if (item.noturno === 'Sérgio') sergioShifts++;
+                if (item.diurno === 'Sérgio') sergioShifts++;
+            });
+
+            document.getElementById('statJeffersonExtras').innerText = jeffersonExtras;
+            document.getElementById('statJeffersonHours').innerText = `${jeffersonExtras * 12}h`;
+            document.getElementById('statGersonExtras').innerText = gersonExtras;
+            document.getElementById('statGersonHours').innerText = `${gersonExtras * 12}h`;
+            document.getElementById('statSergioShifts').innerText = sergioShifts;
+            document.getElementById('statTotalExtras').innerText = jeffersonExtras + gersonExtras;
+        }
+
+        window.openEditModal = function(index) {
+            const item = currentSchedule[index];
+            document.getElementById('modalDayIndex').value = index;
+            document.getElementById('modalDateTitle').innerText = `Editar Escala: Dia ${item.dateStr}`;
+
+            document.getElementById('selectDiurno').value = item.diurno || 'Vago';
+            document.getElementById('selectNoturno').value = item.noturno || 'Vago';
+
+            document.getElementById('checkDiurnoExtra').checked = item.diurnoExtra;
+            document.getElementById('checkNoturnoExtra').checked = item.noturnoExtra;
+
+            document.getElementById('inputNotes').value = item.notes || '';
+
+            const modal = document.getElementById('editModal');
+            const box = document.getElementById('editModalBox');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            box.classList.remove('translate-y-full', 'sm:translate-y-8');
+            box.classList.add('translate-y-0');
+        };
+
+        window.closeEditModal = function() {
+            const modal = document.getElementById('editModal');
+            const box = document.getElementById('editModalBox');
+            box.classList.remove('translate-y-0');
+            box.classList.add('translate-y-full', 'sm:translate-y-8');
+
+            setTimeout(() => {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }, 200);
+        };
+
+        // SALVAMENTO INSTANTÂNEO COM ATUALIZAÇÃO OTIMISTA
+        window.saveShiftChanges = async function(event) {
+            event.preventDefault();
+            const index = parseInt(document.getElementById('modalDayIndex').value);
+
+            const diurnoVal = document.getElementById('selectDiurno').value;
+            const noturnoVal = document.getElementById('selectNoturno').value;
+
+            // 1. Atualiza na tela e fecha o modal instantaneamente
+            currentSchedule[index].diurno = diurnoVal === 'Vago' ? '' : diurnoVal;
+            currentSchedule[index].noturno = noturnoVal === 'Vago' ? '' : noturnoVal;
+            currentSchedule[index].diurnoExtra = document.getElementById('checkDiurnoExtra').checked;
+            currentSchedule[index].noturnoExtra = document.getElementById('checkNoturnoExtra').checked;
+            currentSchedule[index].notes = document.getElementById('inputNotes').value;
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentSchedule));
+            renderCalendar();
+            closeEditModal();
+            updateStatistics();
+            showToast('Escala salva com sucesso!');
+
+            // 2. Sincroniza com o Supabase em segundo plano de forma silenciosa
+            const item = currentSchedule[index];
+            supabase
+                .from('shifts')
+                .update({
+                    diurno: item.diurno,
+                    noturno: item.noturno,
+                    diurno_extra: item.diurnoExtra,
+                    noturno_extra: item.noturnoExtra,
+                    notes: item.notes
+                })
+                .eq('day', item.day)
+                .eq('month_year', activeMonthYear)
+                .then(({ error }) => {
+                    if (error) console.error('Erro ao sincronizar com o Supabase:', error);
+                });
+        };
+
+        window.openNextMonthModal = function() {
+            const modal = document.getElementById('nextMonthModal');
+            const box = document.getElementById('nextMonthModalBox');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            box.classList.remove('translate-y-full', 'sm:translate-y-8');
+            box.classList.add('translate-y-0');
+        };
+
+        window.closeNextMonthModal = function() {
+            const modal = document.getElementById('nextMonthModal');
+            const box = document.getElementById('nextMonthModalBox');
+            box.classList.remove('translate-y-0');
+            box.classList.add('translate-y-full', 'sm:translate-y-8');
+            setTimeout(() => {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }, 200);
+        };
+
+        window.confirmGenerateMonth = async function() {
+            const val = document.getElementById('selectTargetMonth').value;
+            const [monthNum, yearNum] = val.split('|');
+
+            const monthNamesMap = {
+                '1': 'Janeiro', '2': 'Fevereiro', '3': 'Março', '4': 'Abril',
+                '5': 'Maio', '6': 'Junho', '7': 'Julho', '8': 'Agosto',
+                '9': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro'
+            };
+
+            const mName = monthNamesMap[monthNum];
+            currentMonthName = `${mName} ${yearNum}`;
+            activeMonthYear = `${monthNum}-${yearNum}`;
+
+            const daysCount = new Date(parseInt(yearNum), parseInt(monthNum), 0).getDate();
+            const newSched = [];
+            let toggleSeq = 0;
+
+            for (let d = 1; d <= daysCount; d++) {
+                const dateObj = new Date(parseInt(yearNum), parseInt(monthNum) - 1, d);
+                const wDay = dateObj.getDay();
+                const dStr = `${String(d).padStart(2, '0')}/${mName.toLowerCase().substring(0,3)}`;
+
+                let diurnoVal = '';
+                let noturnoVal = '';
+                let dExtra = false;
+                let nExtra = false;
+
+                if (toggleSeq % 2 === 0) {
+                    diurnoVal = 'Gérson Felipe';
+                    noturnoVal = 'Sérgio';
+                } else {
+                    diurnoVal = '';
+                    noturnoVal = 'Jefferson';
+                    dExtra = true;
+                }
+
+                newSched.push({
+                    day: d,
+                    dateStr: dStr,
+                    weekDay: wDay,
+                    diurno: diurnoVal,
+                    noturno: noturnoVal,
+                    diurnoExtra: dExtra,
+                    noturnoExtra: nExtra,
+                    notes: dExtra ? 'Turno Vago Diurno (Coberto)' : '',
+                    month_year: activeMonthYear
+                });
+
+                toggleSeq++;
+            }
+
+            currentSchedule = newSched;
+            document.getElementById('currentMonthLabel').innerText = currentMonthName;
+            
+            await supabase.from('shifts').insert(currentSchedule);
+            renderCalendar();
+            closeNextMonthModal();
+            showToast(`Escala de ${currentMonthName} gerada no Supabase!`);
+        };
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        window.toggleDarkMode = function() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                icon.className = 'fa-solid fa-moon text-lg';
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                icon.className = 'fa-solid fa-sun text-lg text-amber-400';
+            }
+        };
+
+        window.resetDataPrompt = function() {
+            if (confirm('Deseja restaurar a escala padrão de novembro?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        };
+    </script>
+</body>
+</html>
