@@ -429,7 +429,7 @@
     </div>
 
     <!-- JavaScript Application Logic with Supabase & Optimistic UI -->
-    <script type="module">
+<script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
         const SUPABASE_URL = 'https://ehgzjfwleqqytwloarkd.supabase.co';
@@ -481,7 +481,6 @@
         let currentMonthNum = 11;
         let currentYearNum = 2026;
         let currentFilter = 'all';
-        const STORAGE_KEY = 'oneui_portaria_schedule_v3';
 
         const monthNamesMap = {
             1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril',
@@ -501,45 +500,14 @@
 
                 if (data && data.length > 0) {
                     currentSchedule = data;
+                } else if (activeMonthYear === '11-2026') {
+                    // Insere novembro padrão se não existir
+                    await supabase.from('shifts').upsert(defaultSchedule, { onConflict: 'month_year,day' });
+                    currentSchedule = defaultSchedule;
                 } else {
-                    let dataToInsert = defaultSchedule;
-                    if (activeMonthYear === '11-2026') {
-                        dataToInsert = defaultSchedule;
-                    } else {
-                        // Gera automaticamente caso não exista no banco
-                        const daysCount = new Date(currentYearNum, currentMonthNum, 0).getDate();
-                        const mName = monthNamesMap[currentMonthNum];
-                        const newGen = [];
-                        let toggleSeq = 0;
-                        for (let d = 1; d <= daysCount; d++) {
-                            const dateObj = new Date(currentYearNum, currentMonthNum - 1, d);
-                            const wDay = dateObj.getDay();
-                            const dStr = `${String(d).padStart(2, '0')}/${mName.toLowerCase().substring(0,3)}`;
-                            let dVal = toggleSeq % 2 === 0 ? 'Gérson Felipe' : '';
-                            let nVal = toggleSeq % 2 === 0 ? 'Sérgio' : 'Jefferson';
-                            let dExt = toggleSeq % 2 !== 0;
-                            newGen.push({
-                                day: d, dateStr: dStr, weekDay: wDay,
-                                diurno: dVal, noturno: nVal,
-                                diurnoExtra: dExt, noturnoExtra: false,
-                                notes: dExt ? 'Turno Vago Diurno (Coberto)' : '',
-                                month_year: activeMonthYear
-                            });
-                            toggleSeq++;
-                        }
-                        dataToInsert = newGen;
-                    }
-
-                    const { data: inserted, error: insertErr } = await supabase
-                        .from('shifts')
-                        .insert(dataToInsert)
-                        .select();
-
-                    if (!insertErr && inserted) {
-                        currentSchedule = inserted;
-                    } else {
-                        currentSchedule = dataToInsert;
-                    }
+                    // Se o mês selecionado não foi gerado ainda, avisa a tela que está vazio
+                    currentSchedule = [];
+                    showToast('Nenhuma escala gerada para este mês ainda.');
                 }
 
                 document.getElementById('currentMonthLabel').innerText = currentMonthName;
@@ -547,7 +515,7 @@
                 updateStatistics();
             } catch (err) {
                 console.error('Erro ao carregar do Supabase:', err);
-                currentSchedule = defaultSchedule;
+                currentSchedule = activeMonthYear === '11-2026' ? defaultSchedule : [];
                 renderCalendar();
                 updateStatistics();
             }
@@ -557,6 +525,7 @@
             loadSavedSchedule();
         };
 
+        // TRAVA: Não permite voltar antes de Novembro de 2026
         window.changeMonth = function(direction) {
             currentMonthNum += direction;
             if (currentMonthNum > 12) {
@@ -567,6 +536,14 @@
                 currentYearNum--;
             }
 
+            // Limite mínimo: Novembro de 2026
+            if (currentYearNum < 2026 || (currentYearNum === 2026 && currentMonthNum < 11)) {
+                currentMonthNum = 11;
+                currentYearNum = 2026;
+                showToast('O histórico começa em Novembro de 2026.');
+                return;
+            }
+
             activeMonthYear = `${currentMonthNum}-${currentYearNum}`;
             currentMonthName = `${monthNamesMap[currentMonthNum]} ${currentYearNum}`;
             loadSavedSchedule();
@@ -575,6 +552,17 @@
         function renderCalendar() {
             const container = document.getElementById('calendarGrid');
             container.innerHTML = '';
+
+            if (currentSchedule.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-gray-400">
+                        <i class="fa-solid fa-calendar-xmark text-4xl mb-2 opacity-50"></i>
+                        <p class="text-sm font-semibold">Nenhuma escala cadastrada para ${currentMonthName}.</p>
+                        <p class="text-xs mt-1">Clique em "Gerar Novo Mês" acima para criar a escala deste período.</p>
+                    </div>
+                `;
+                return;
+            }
 
             const weekDaysNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
             currentSchedule.forEach((item, index) => {
@@ -857,11 +845,20 @@
             currentSchedule = newSched;
             document.getElementById('currentMonthLabel').innerText = currentMonthName;
             
-            await supabase.from('shifts').insert(currentSchedule);
-            renderCalendar();
-            updateStatistics();
-            closeNextMonthModal();
-            showToast(`Escala de ${currentMonthName} gerada no Supabase!`);
+            // Salva de forma segura no Supabase utilizando upsert
+            const { error } = await supabase
+                .from('shifts')
+                .upsert(currentSchedule, { onConflict: 'month_year,day' });
+
+            if (error) {
+                console.error('Erro ao salvar no Supabase:', error);
+                showToast('Erro ao salvar o mês gerado.');
+            } else {
+                renderCalendar();
+                updateStatistics();
+                closeNextMonthModal();
+                showToast(`Escala de ${currentMonthName} gerada com sucesso!`);
+            }
         };
 
         function showToast(message) {
